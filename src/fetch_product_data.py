@@ -11,6 +11,7 @@ class FetchData:
 
     @classmethod
     def get_full_url(cls, url, page_num):
+        """Метод добавляет номер страницы в цикле и возвращает список ссылок для постраничного вывода"""
         data = []
         for i in range(1, page_num + 1):
             full_url = url + str(i)
@@ -20,7 +21,8 @@ class FetchData:
     @classmethod
     def get_request(cls, full_url):
         """
-        Получение данных с сайта
+        Метод для получения данных с сайта с сайта goldapple.ru.
+        Возвращает список с данными о продукте
         """
 
         payload = {}
@@ -52,20 +54,22 @@ class FetchData:
                 'title': product['name'],
                 'price': product['price']['actual']['amount'],
                 'rating': product.get('reviews', {}).get('rating', None),
-                'item_id': product['itemId'],
-                'item_url': f"https://goldapple.ru/front/api/catalog/product-card/base?itemId={product['itemId']}&cityId=0c5b2444-70a0-4932-980c-b4dc0d3f02b5&customerGroupId=0"}
+                'item_id': product['itemId']}
         return data
 
     @classmethod
     def save_to_csv(cls, file_name, products_data):
+        """Метод сохраняет данные в csv файл"""
         with open(file_name, mode="a", newline="", encoding="utf-8") as csv_file:
             csv_file.write(
-                f"Ссылка на товар: {products_data['product_url']}; Название: {products_data['title']}; Цена: {products_data['price']} руб.; Рейтинг: {products_data['rating']};\n")
+                f"{products_data['product_url']}^ {products_data['title']}^ {products_data['price']}^ "
+                f"{products_data['rating']}^ {products_data['item_id']}\n")
 
     @classmethod
     def fetch_all_data(cls, url_list, file_name):
         """
         Запрашивает данные о всех продуктах на указанной странице
+        и сохраняет их в csv-файл
         """
 
         for url in url_list:

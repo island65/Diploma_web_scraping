@@ -1,4 +1,3 @@
-import os
 import re
 import requests
 
@@ -11,25 +10,16 @@ class DetailedInfo:
         self.item_url = item_url
 
     @classmethod
-    def get_item_id(cls, csv_file):
+    def get_item_id(cls, line):
         """Возвращает id товара из csv файла"""
-        with (open(csv_file, 'r', encoding='utf-8') as file):
-            lines = file.readlines()
-            item_id_list = []
-            for line in lines:
-                item_id = re.search(r"\d+", line).group()
-                item_id_list.append(item_id)
-        return item_id_list
+        item_id = re.search(r"\d+", line).group()
+        return item_id
 
     @classmethod
-    def get_item_url(cls, item_id_list):
-        """Возвращает список ссылок на страницы с детальной информацией о товаре"""
-        item_url_list = []
-        for line in item_id_list:
-            item_id = re.search(r"\d+", line).group()
-            item_url = f"https://goldapple.ru/front/api/catalog/product-card/base?itemId={item_id}&cityId=0c5b2444-70a0-4932-980c-b4dc0d3f02b5&customerGroupId=0"
-            item_url_list.append(item_url)
-        return item_url_list
+    def get_item_url(cls, item_id):
+        """Возвращает ссылку на страницу с детальной информацией о товаре"""
+        item_url = f"https://goldapple.ru/front/api/catalog/product-card/base?itemId={item_id}&cityId=0c5b2444-70a0-4932-980c-b4dc0d3f02b5&customerGroupId=0"
+        return item_url
 
     @classmethod
     def get_request_for_detailed_info(cls, item_url):
@@ -89,29 +79,36 @@ class DetailedInfo:
                     else:
                         for dict_item in detailed_data:
                             if 'Дополнительная информация' in dict_item.values():
-                                country = re.search(r'страна происхождения<br>(.*?)<br>',
+                                country = re.search(r"страна происхождения<br>(.*?)<br>",
                                                     dict_item['content']).group(1)
                                 return country
 
     @classmethod
-    def details_dict(cls, description, usage, country):
-        details = {"description": description,
+    def details_dict(cls, item_id, description, usage, country):
+        """Метод для создания словаря с полученными данными"""
+        details = {"id": item_id,
+                   "description": description,
                    "usage": usage,
                    "country": country}
         return details
 
     @classmethod
     def save_to_csv(cls, file_name, details_data):
+        """Метод для сохранения полученных данных в CSV-файл"""
         with open(file_name, mode="a", newline="", encoding="utf-8") as csv_file:
             csv_file.write(
-                f"Описание продукта: {details_data['description']}; Инструкция по применению: {details_data['usage']}; Страна-производитель: {details_data['country']}\n")
+                f"{details_data['id']}^ {details_data['description']}^ {details_data['usage']}^ "
+                f"{details_data['country']}\n")
 
     @classmethod
     def collect_details(cls, csv_products, csv_details):
-        item_id_list = cls.get_item_id(csv_products)
-        item_url_list = cls.get_item_url(item_id_list)
-        for url in item_url_list:
-            response = cls.get_request_for_detailed_info(url)
-            detailed_data = cls.details_dict(cls.get_description(response), cls.get_usage(response),
-                                             cls.get_country(response))
-            cls.save_to_csv(csv_details, detailed_data)
+        """Метод для сбора и сохранения информации о деталях товаров"""
+        with (open(csv_products, 'r', encoding='utf-8') as file):
+            lines = file.readlines()
+            for line in lines:
+                item_id = cls.get_item_id(line)
+                item_url = cls.get_item_url(item_id)
+                response = cls.get_request_for_detailed_info(item_url)
+                detailed_data = cls.details_dict(item_id, cls.get_description(response), cls.get_usage(response),
+                                                 cls.get_country(response))
+                cls.save_to_csv(csv_details, detailed_data)
