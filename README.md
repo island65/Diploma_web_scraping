@@ -53,7 +53,12 @@ venv\Scripts\activate  # для Windows
 pip install -r requirements.txt
 ```
 
-### Шаг 4: Запуск проекта
+### Шаг 4: Задать путь в папку для csv файлов
+
+Создать файл .env. Прописать путь к папке и дать названия csv-файлам.
+(Рекомендовано: `data/products.csv`, `data/details.csv`, `data/merged_data.csv`)
+
+### Шаг 5: Запуск проекта
 
 Для запуска процесса сбора данных используйте команду:
 
